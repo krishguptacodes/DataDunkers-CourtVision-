@@ -248,11 +248,13 @@ CREATE TABLE SeasonStats (
 
 -- PlayerStats - Player stats per team
 CREATE TABLE PlayerStats (
-    statsID INT AUTO_INCREMENT PRIMARY KEY,
+    statsID INT NOT NULL,
     playerID INT NOT NULL,
     ptsPerGame DECIMAL(5,2),
     rebPerGame DECIMAL(5,2),
     astPerGame DECIMAL(5,2),
+    PRIMARY KEY (statsID, playerID),
+    UNIQUE KEY unique_statID (statsID),
     CONSTRAINT fk_playerstats_player
         FOREIGN KEY (playerID) REFERENCES Players(playerID)
         ON UPDATE CASCADE
@@ -402,7 +404,7 @@ CREATE TABLE Reports (
         ON DELETE SET NULL
 );
 
--- Validation - Stat account verification
+-- Validations - Stat account validations
 CREATE TABLE Validations (
     validationID INT AUTO_INCREMENT PRIMARY KEY,
     `status` VARCHAR(20),
@@ -420,8 +422,13 @@ CREATE TABLE Validations (
 CREATE TABLE Verifications (
     reqID INT AUTO_INCREMENT PRIMARY KEY,
     playerID INT NOT NULL,
-    CONSTRAINT fk_validation_admin
+    adminID INT NOT NULL,
+    CONSTRAINT fk_verification_player
         FOREIGN KEY (playerID) REFERENCES Players(playerID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+     CONSTRAINT fk_verification_admin
+        FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)
         ON UPDATE CASCADE
         ON DELETE SET NULL
 );
@@ -441,7 +448,7 @@ CREATE TABLE Exports (
         ON DELETE CASCADE
 );
 
--- Metric_Export - Junction table linking MetricsFormulas to Exports
+-- MetricExports - Junction table linking MetricsFormulas to Exports
 CREATE TABLE MetricExports (
     formulaID INT NOT NULL,
     exportID INT NOT NULL,
@@ -509,101 +516,15 @@ TRUNCATE TABLE Players;
 
 SET FOREIGN_KEY_CHECKS = 1;
 
--- Players
-INSERT INTO Players (firstName, lastName, email, phoneNumber, userBio, dateOfBirth, height, weight, acctStatus) VALUES
-('LeBron', 'James', 'lebron.james@email.com', '555-0101', 'Experienced forward with strong leadership skills', '2003-12-30', 78, 250, 'active'),
-('Stephen', 'Curry', 'steph.curry@email.com', '555-0102', 'Elite shooter, excellent ball handler', '2004-03-14', 75, 185, 'active'),
-('Kevin', 'Durant', 'kd@email.com', '555-0103', 'Versatile scorer, 7-foot forward', '2003-09-29', 82, 240, 'active'),
-('Giannis', 'Antetokounmpo', 'giannis@email.com', '555-0104', 'Athletic forward, defensive specialist', '2004-12-06', 83, 242, 'active'),
-('Luka', 'Doncic', 'luka.doncic@email.com','555-0105', 'Young talent, excellent court vision', '2005-02-28', 79, 230, 'active');
-
--- Teams
-INSERT INTO Teams (teamName, city, teamAbbrev, league) VALUES
-('Lakers', 'Los Angeles', 'LAL', 'AAU'),
-('Warriors', 'Oakland', 'GSW', 'AAU'),
-('Nets', 'Brooklyn', 'BKN', 'AAU'),
-('Bucks', 'Milwaukee', 'MIL', 'NBA'),
-('Celtics', 'Boston', 'BOS', 'NBA');
-
--- Schools
-INSERT INTO Schools (name, city, state) VALUES
-('Duke University', 'Durham', 'NC'),
-('University of Kentucky', 'Lexington', 'KY');
-
--- Games
-INSERT INTO Games (date, startTime, endTime, opponent, venue, tournament, score) VALUES
-('2024-11-15', '18:00:00', '20:00:00', 'Warriors', 'Staples Center', 'AAU Championship', '95-88'),
-('2024-11-16', '19:00:00', '21:00:00', 'Nets', 'Barclays Center', 'AAU Championship', '102-98');
-
--- Scouts
-INSERT INTO Scouts (firstName, lastName, email, dateOfBirth, age, phoneNum, acctStatus, role) VALUES
-('Michael', 'Thompson', 'mthompson@scout.com', '1985-04-12', 38, '657-555-1001', 'active', 'Senior Scout'),
-('Sarah', 'Johnson', 'sjohnson@scout.com', '1990-08-22', 33, '433-555-1002', 'active', 'Regional Scout');
-
--- SystemAdmins
-INSERT INTO SystemAdmin (firstName, lastName, email, dept, acctStatus) VALUES
-('John', 'Anderson', 'jadmin@courtvision.com', 'IT', 'active'),
-('Lisa', 'Chen', 'lchen@courtvision.com', 'Operations', 'active');
-
--- Dashboards
-INSERT INTO Dashboard (dashboardName, metricDisplayed, chartType, filterCriteria) VALUES
-('Player Performance Overview', 'Points Per Game', 'Bar Chart', 'season=2024'),
-('Team Analytics', 'Win Rate', 'Line Chart', 'league=AAU');
-
--- Metric formulas
-INSERT INTO MetricFormula (formulaName, createdBy, dateCreated) VALUES
-('Player Efficiency Rating', 'System', '2024-01-15 10:00:00'),
-('True Shooting Percentage', 'System', '2024-01-15 10:30:00');
-
--- Export requests
-INSERT INTO ExportRequests (format, timestamp, player) VALUES
-('CSV', '2024-11-20 15:30:00', 'Player 1'),
-('PDF', '2024-11-21 10:00:00', 'Player 2');
-
--- =========================
--- Relationships / junctions
--- =========================
-
--- Teams play in games
-INSERT INTO PlaysIn (teamID, gameID) VALUES
-(1, 1), (1, 2),
-(2, 1), (2, 2);
-
--- Player schedule (only existing games)
-INSERT INTO PlayerSchedules (playerID, gameID) VALUES
-(1, 1), (1, 2),
-(2, 1), (2, 2);
-
--- Scout activity (only existing games)
-INSERT INTO ScoutActivity (scoutID, gameID) VALUES
-(1, 1),
-(1, 2),
-(2, 2);
-
--- Games scheduled for teams (only valid game/team IDs)
-INSERT INTO ScheduledFor (gameID, teamID) VALUES
-(1, 1), (1, 2),
-(2, 3), (2, 4);
-
--- Recruiting interest (only valid school IDs)
-INSERT INTO RecruitingInterests (playerID, schoolID) VALUES
-(1, 1),
-(1, 2),
-(2, 2);
-
--- =========================
--- Stats tables
--- =========================
-
 -- Season stats
 INSERT INTO SeasonStats (seasonStatID, playerID, season, gamesPlayed, totalMinsPlayed, avgPts, ptsPerGame, rebPerGame, astPerGame, avgRebounds, avgAsts, threePointers, threePPercent, fieldGoalPercent, freeThrowPercent) VALUES
 (1, 1, '2024', 25, 800, 28.5, 28.5, 8.2, 7.1, 8.2, 7.1, 45, 36.5, 51.2, 78.5),
 (2, 2, '2024', 28, 900, 32.1, 32.1, 5.1, 6.8, 5.1, 6.8, 120, 43.2, 48.7, 91.3);
 
 -- Player stats
-INSERT INTO PlayerStats (playerID, ptsPerGame, rebPerGame, astPerGame) VALUES
-(1, 28.5, 8.2, 7.1),
-(2, 32.1, 5.1, 6.8);
+INSERT INTO PlayerStats (statsID, playerID, ptsPerGame, rebPerGame, astPerGame) VALUES
+(1, 1, 28.5, 8.2, 7.1),
+(2, 2, 32.1, 5.1, 6.8);
 
 -- Game stats
 INSERT INTO GameStats (gameStatID, gameID, playerID, minutes, points, rebounds, assists, steals, blocks, turnovers, fouls, threePts) VALUES
@@ -611,17 +532,13 @@ INSERT INTO GameStats (gameStatID, gameID, playerID, minutes, points, rebounds, 
 (2, 1, 2, 38, 28, 5, 7, 1, 0, 2, 2, 5),
 (3, 1, 3, 28, 19, 4, 6, 1, 0, 2, 3, 3);
 
--- =========================
--- Scouting / reports / offers
--- =========================
-
 -- Player scouting reports
 INSERT INTO PlayerReports (playerID, summary, date, strengths, weaknesses, grade) VALUES
 (1, 'Elite all-around player with NBA-ready skills', '2024-11-01', 'Leadership, basketball IQ, versatility', 'Three-point consistency', 'A'),
 (2, 'Best shooter in the class, elite range', '2024-11-02', 'Shooting, ball handling', 'Defensive intensity, size', 'A-'),
 (3, 'Skilled scorer with length advantage', '2024-11-03', 'Shooting, length', 'Lateral quickness on defense', 'B+');
 
--- Offers (only valid school IDs)
+-- Offers
 INSERT INTO Offers (playerID, schoolID, status, date) VALUES
 (1, 1, 'accepted', '2024-10-01'),
 (2, 2, 'pending', '2024-10-05');
@@ -655,17 +572,17 @@ INSERT INTO DashboardMetrics (dashboardID, metricID) VALUES
 INSERT INTO Validations (status, timestamp, reqDate, responseDate, gameStatID) VALUES
 ('approved', '2024-11-16 10:00:00', '2024-11-15', '2024-11-16', 1);
 
--- Verifications
-INSERT INTO Verifications (playerID) VALUES
-(1),
-(2);
+-- Verifications 
+INSERT INTO Verifications (playerID, adminID) VALUES
+(1, 1),
+(2, 1);
 
 -- Exports
 INSERT INTO Exports (playerID, exportID) VALUES
 (1, 1),
 (2, 2);
 
--- Metric_Export
+-- MetricExports
 INSERT INTO MetricExports (formulaID, exportID) VALUES
 (1, 1),
 (2, 1);
@@ -675,7 +592,6 @@ INSERT INTO ScoutViewStats (scoutID, statsID) VALUES
 (1, 1),
 (1, 2),
 (2, 1);
-
 SHOW TABLES;
 SELECT * FROM Players;
 SELECT * FROM GameStats;
