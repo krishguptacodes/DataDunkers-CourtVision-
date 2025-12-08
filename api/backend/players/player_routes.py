@@ -4,6 +4,7 @@ from mysql.connector import Error
 from flask import current_app
 
 # Create a Blueprint for NGO routes
+<<<<<<< HEAD
 players = Blueprint("players", __name__)
 
 # Add a new game's statistics for a player
@@ -69,3 +70,6 @@ def add_game_stats():
     finally:
         if cursor:
             cursor.close()
+=======
+players = Blueprint("players", __name__)
+>>>>>>> origin/main
