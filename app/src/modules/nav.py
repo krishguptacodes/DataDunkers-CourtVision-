@@ -131,50 +131,73 @@ def SideBarLinks(show_home=False):
     # Display logo
     st.sidebar.image("assets/logo.png", width=150)
 
-    # Check authentication
+    # Always show Home link at top
+    st.sidebar.page_link("Home.py", label="Landing Page", icon="🏠")
+    st.sidebar.markdown("---")
+
+    # Set default session state (no login required)
     if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
-        st.switch_page("Home.py")
+        st.session_state.authenticated = True
+        st.session_state.role = "player"  # Default role
+        st.session_state.user_id = 1  # Default to player 1
+        st.session_state.first_name = "Player"
 
-    # Show home link if requested
-    if show_home:
-        HomeNav()
+    # Show ALL navigation links (no authentication required)
+    role = st.session_state.get("role", "player")
 
-    # Show role-specific navigation
-    if st.session_state.get("authenticated", False):
+    if role == "system_admin":
+        AdminHomeNav()
+        ManageUsersNav()
+        VerificationsNav()
+        ReportsNav()
 
-        role = st.session_state.get("role", "")
+    elif role == "player":
+        PlayerHomeNav()
+        PlayerStatsNav()
+        UploadVideosNav()
+        ViewFeedbackNav()
 
-        if role == "system_admin":
-            AdminHomeNav()
-            ManageUsersNav()
-            VerificationsNav()
-            ReportsNav()
+    elif role == "data_analyst":
+        AnalystHomeNav()
+        AnalyticsDashboardNav()
+        CustomMetricsNav()
+        ExportDataNav()
 
-        elif role == "player":
-            PlayerHomeNav()
-            PlayerStatsNav()
-            UploadVideosNav()
-            ViewFeedbackNav()
+    elif role == "game_scout":
+        ScoutHomeNav()
+        SearchPlayersNav()
+        LiveScoutNav()
+        ScoutScheduleNav()
 
-        elif role == "data_analyst":
-            AnalystHomeNav()
-            AnalyticsDashboardNav()
-            CustomMetricsNav()
-            ExportDataNav()
-
-        elif role == "game_scout":
-            ScoutHomeNav()
-            SearchPlayersNav()
-            LiveScoutNav()
-            ScoutScheduleNav()
-
-    # Always show About
+    # Always show About at the bottom
+    st.sidebar.markdown("---")
     AboutPageNav()
 
-    # Show logout button
-    if st.session_state.get("authenticated", False):
-        if st.sidebar.button("Logout"):
-            st.session_state.role = None
-            st.session_state.authenticated = False
-            st.switch_page("Home.py")
+    # Role switcher (since no login, let users switch roles)
+    st.sidebar.markdown("---")
+    st.sidebar.write("**Switch Role:**")
+
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        if st.button("👤 Player", use_container_width=True):
+            st.session_state.role = "player"
+            st.session_state.user_id = 101
+            st.session_state.first_name = "Sean"
+            st.rerun()
+        if st.button("📊 Analyst", use_container_width=True):
+            st.session_state.role = "data_analyst"
+            st.session_state.user_id = 1
+            st.session_state.first_name = "John"
+            st.rerun()
+
+    with col2:
+        if st.button("🔧 Admin", use_container_width=True):
+            st.session_state.role = "system_admin"
+            st.session_state.user_id = 1
+            st.session_state.first_name = "Ryan"
+            st.rerun()
+        if st.button("🔍 Scout", use_container_width=True):
+            st.session_state.role = "game_scout"
+            st.session_state.user_id = 1
+            st.session_state.first_name = "Sara"
+            st.rerun()
