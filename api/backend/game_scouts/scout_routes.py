@@ -241,3 +241,4 @@ def add_annotation_to_footage(footage_id):
     except Error as e:
         db.get_db().rollback()
         return jsonify({"error": str(e)}), 500
+
