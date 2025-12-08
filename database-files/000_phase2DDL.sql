@@ -47,7 +47,7 @@ CREATE TABLE Players (
     firstName VARCHAR(50) NOT NULL,
     lastName VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    dateOfBirth DATE,
+    dateOfBirth VARCHAR(50),
     age INT,
     phoneNumber VARCHAR(20),
     userBio TEXT,
@@ -76,12 +76,12 @@ CREATE TABLE Schools (
 -- Game Table
 CREATE TABLE Games (
     gameID INT AUTO_INCREMENT PRIMARY KEY,
-    `date` DATE NOT NULL,
-    startTime TIME,
-    endTime TIME,
-    opponent VARCHAR(100),
-    venue VARCHAR(100),
-    tournament VARCHAR(100),
+    `date` VARCHAR(50) NOT NULL,
+    startTime VARCHAR(20),
+    endTime VARCHAR(20),
+    opponent VARCHAR(255),
+    venue VARCHAR(255),
+    tournament VARCHAR(255),
     score VARCHAR(20)
 );
 
@@ -91,7 +91,7 @@ CREATE TABLE Scouts (
     firstName VARCHAR(50) NOT NULL,
     lastName VARCHAR(50) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    dateOfBirth DATE,
+    dateOfBirth VARCHAR(50),
     age INT,
     phoneNum VARCHAR(20),
     acctStatus VARCHAR(20) DEFAULT 'active',
@@ -295,7 +295,7 @@ CREATE TABLE PlayerReports (
     reportID INT AUTO_INCREMENT PRIMARY KEY,
     playerID INT NOT NULL,
     summary TEXT,
-    `date` DATE,
+    `date` VARCHAR(50),
     strengths TEXT,
     weaknesses TEXT,
     grade TEXT,
@@ -312,7 +312,7 @@ CREATE TABLE Offers (
     playerID INT NOT NULL,
     schoolID INT NOT NULL,
     `status` VARCHAR(20) DEFAULT 'pending',
-    `date` DATE,
+    `date` VARCHAR(50),
     CONSTRAINT fk_offers_player
         FOREIGN KEY (playerID) REFERENCES Players(playerID)
         ON UPDATE CASCADE
@@ -343,7 +343,7 @@ CREATE TABLE Annotations (
     annotationID INT AUTO_INCREMENT PRIMARY KEY,
     reportID INT,
     annotatedBy INT,
-    `timestamp` TIME,
+    `timestamp` VARCHAR(20),
     `text` TEXT,
     footageID INT,
     CONSTRAINT fk_annotations_report
@@ -391,10 +391,10 @@ CREATE TABLE DashboardMetrics (
 -- Reports - Tracking reported users/content
 CREATE TABLE Reports (
     reportID INT AUTO_INCREMENT PRIMARY KEY,
-    adminID INT NOT NULL,
+    adminID INT,
     repStatus VARCHAR(20) DEFAULT 'pending',
     userReported VARCHAR(20),
-    `date` DATETIME,
+    `date` VARCHAR(50),
     CONSTRAINT fk_userreported_reviewer
     FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)
     ON UPDATE CASCADE
@@ -405,7 +405,7 @@ CREATE TABLE Reports (
 CREATE TABLE Validations (
     validationID INT AUTO_INCREMENT PRIMARY KEY,
     `status` VARCHAR(20),
-    `timestamp` TIMESTAMP,
+    `timestamp` VARCHAR(20),
     reqDate DATE,
     responseDate DATE,
     gameStatID INT NOT NULL,
@@ -419,7 +419,7 @@ CREATE TABLE Validations (
 CREATE TABLE Verifications (
     reqID INT AUTO_INCREMENT PRIMARY KEY,
     playerID INT NOT NULL,
-    adminID INT NOT NULL,
+    adminID INT,
     CONSTRAINT fk_verification_player
     FOREIGN KEY (playerID) REFERENCES Players(playerID)
     ON UPDATE CASCADE
@@ -508,83 +508,3 @@ TRUNCATE TABLE Teams;
 TRUNCATE TABLE Players;
 
 SET FOREIGN_KEY_CHECKS = 1;
-
--- Season stats
-INSERT INTO SeasonStats (seasonStatID, playerID, season, gamesPlayed, totalMinsPlayed, avgPts, ptsPerGame, rebPerGame, astPerGame, avgRebounds, avgAsts, threePointers, threePPercent, fieldGoalPercent, freeThrowPercent) VALUES
-(1, 1, '2024', 25, 800, 28.5, 28.5, 8.2, 7.1, 8.2, 7.1, 45, 36.5, 51.2, 78.5),
-(2, 2, '2024', 28, 900, 32.1, 32.1, 5.1, 6.8, 5.1, 6.8, 120, 43.2, 48.7, 91.3);
-
--- Player stats
-INSERT INTO PlayerStats (statsID, playerID, ptsPerGame, rebPerGame, astPerGame) VALUES
-(1, 1, 28.5, 8.2, 7.1),
-(2, 2, 32.1, 5.1, 6.8);
-
--- Game stats
-INSERT INTO GameStats (gameStatID, gameID, playerID, minutes, points, rebounds, assists, steals, blocks, turnovers, fouls, threePts) VALUES
-(1, 1, 1, 35, 32, 9, 8, 2, 1, 3, 2, 2),
-(2, 1, 2, 38, 28, 5, 7, 1, 0, 2, 2, 5),
-(3, 1, 3, 28, 19, 4, 6, 1, 0, 2, 3, 3);
-
--- Player scouting reports
-INSERT INTO PlayerReports (playerID, summary, date, strengths, weaknesses, grade) VALUES
-(1, 'Elite all-around player with NBA-ready skills', '2024-11-01', 'Leadership, basketball IQ, versatility', 'Three-point consistency', 'A'),
-(2, 'Best shooter in the class, elite range', '2024-11-02', 'Shooting, ball handling', 'Defensive intensity, size', 'A-'),
-(3, 'Skilled scorer with length advantage', '2024-11-03', 'Shooting, length', 'Lateral quickness on defense', 'B+');
-
--- Offers
-INSERT INTO Offers (playerID, schoolID, status, date) VALUES
-(1, 1, 'accepted', '2024-10-01'),
-(2, 2, 'pending', '2024-10-05');
-
--- System-level reports
-INSERT INTO Reports (adminID, repStatus, userReported, date) VALUES
-(1, 'completed', 'Player 5', '2024-11-15'),
-(2, 'pending', 'Scout 3', '2024-11-20');
-
--- Footage
-INSERT INTO Footage (gameID, URL, duration) VALUES
-(1, 'https://footage.courtvision.com/game1_player1.mp4', 180),
-(1, 'https://footage.courtvision.com/game1_player2.mp4', 165);
-
--- Annotations
-INSERT INTO Annotations (reportID, timestamp, text) VALUES
-(1, '00:05:23', 'Excellent defensive possession'),
-(1, '00:12:45', 'Great court vision on assist');
-
--- Calculated metrics
-INSERT INTO CalculatedMetrics (metricID, formulaID, formulaName, gameID, calcTimestamp) VALUES
-(1, 1, 'Player Efficiency Rating', 1, '2024-11-15 22:00:00'),
-(2, 1, 'Player Efficiency Rating', 1, '2024-11-15 22:00:00');
-
--- Dashboard ↔ metrics
-INSERT INTO DashboardMetrics (dashboardID, metricID) VALUES
-(1, 1),
-(1, 2);
-
--- Validations
-INSERT INTO Validations (status, timestamp, reqDate, responseDate, gameStatID) VALUES
-('approved', '2024-11-16 10:00:00', '2024-11-15', '2024-11-16', 1);
-
--- Verifications 
-INSERT INTO Verifications (playerID, adminID) VALUES
-(1, 1),
-(2, 1);
-
--- Exports
-INSERT INTO Exports (playerID, exportID) VALUES
-(1, 1),
-(2, 2);
-
--- MetricExports
-INSERT INTO MetricExports (formulaID, exportID) VALUES
-(1, 1),
-(2, 1);
-
--- ScoutViewStats
-INSERT INTO ScoutViewStats (scoutID, statsID) VALUES
-(1, 1),
-(1, 2),
-(2, 1);
-SHOW TABLES;
-SELECT * FROM Players;
-SELECT * FROM GameStats;
