@@ -392,7 +392,7 @@ CREATE TABLE Reports (
     reportID INT AUTO_INCREMENT PRIMARY KEY,
     adminID INT,
     repStatus VARCHAR(20) DEFAULT 'pending',
-    userReported VARCHAR(20),
+    userReported VARCHAR(1000),
     `date` VARCHAR(50),
     CONSTRAINT fk_userreported_reviewer
     FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)

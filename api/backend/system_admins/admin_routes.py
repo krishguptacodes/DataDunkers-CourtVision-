@@ -136,3 +136,72 @@ def update_player_profile(playerID):
     except Error as e:
         db.get_db().rollback()
         return jsonify({"error": str(e)}), 500   
+
+
+# verify scouts joining the app
+@admins.route('/scouts/<int:scout_id>/verify', methods=['PUT'])
+def verify_scout(scout_id):
+    try:
+        cursor = db.get_db().cursor()
+        
+        cursor.execute("SELECT scoutID, firstName, lastName, acctStatus FROM Scouts WHERE scoutID = %s", (scout_id,))
+        scout = cursor.fetchone()
+        
+        if not scout:
+            cursor.close()
+            return jsonify({'success': False, 'message': f'Scout {scout_id} not found'}), 404
+        
+        cursor.execute("UPDATE Scouts SET acctStatus = 'active' WHERE scoutID = %s", (scout_id,))
+        
+        cursor.execute("INSERT INTO Reports (adminID, repStatus, userReported, date) VALUES (%s, 'completed', %s, NOW())", (1, f"Verified scout {scout_id}"))
+        
+        db.get_db().commit()
+        cursor.close()
+        
+        return jsonify({'success': True, 'message': f'Scout {scout_id} verified successfully', 'scout': {'scoutID': scout['scoutID'], 'firstName': scout['firstName'], 'lastName': scout['lastName'], 'acctStatus': 'active'}}), 200
+        
+    except Error as e:
+        db.get_db().rollback()
+        return jsonify({"error": str(e)}), 500
+
+# updating scout profiles 
+@admins.route('/scouts/<int:scout_id>/update', methods=['PUT'])
+def update_scout_profile(scout_id):
+    try:
+        data = request.get_json()
+        cursor = db.get_db().cursor()
+        
+        cursor.execute("SELECT * FROM Scouts WHERE scoutID = %s", (scout_id,))
+        if not cursor.fetchone():
+            cursor.close()
+            return jsonify({'success': False, 'message': 'Scout not found'}), 404
+        
+        update_fields = []
+        values = []
+        
+        allowed_fields = ['firstName', 'lastName', 'email', 'dateOfBirth', 'age', 'phoneNum', 'acctStatus', 'role']
+        
+        for field in allowed_fields:
+            if field in data:
+                update_fields.append(f"{field} = %s")
+                values.append(data[field])
+        
+        if not update_fields:
+            return jsonify({'success': False, 'message': 'No valid fields to update'}), 400
+        
+        values.append(scout_id)
+        
+        update_query = f"UPDATE Scouts SET {', '.join(update_fields)} WHERE scoutID = %s"
+        
+        cursor.execute(update_query, values)
+        
+        cursor.execute("INSERT INTO Reports (adminID, repStatus, userReported, date) VALUES (%s, 'completed', %s, NOW())", (1, f"Updated profile for Scout {scout_id}"))
+        
+        db.get_db().commit()
+        cursor.close()
+        
+        return jsonify({'success': True, 'message': f'Scout {scout_id} profile updated successfully', 'updated_fields': list(data.keys())}), 200
+        
+    except Error as e:
+        db.get_db().rollback()
+        return jsonify({"error": str(e)}), 500
