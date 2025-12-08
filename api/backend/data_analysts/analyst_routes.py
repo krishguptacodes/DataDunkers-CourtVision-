@@ -40,3 +40,38 @@ def remove_player_fraud(playerID):
         db.get_db().rollback()
         return jsonify({"error": str(e)}), 500
 
+
+# remove fraudulent game statistics 
+@admins.route('/stats/fraudulent/<int:gameStatID>/remove', methods=['DELETE'])
+def remove_fraudulent_stats(gameStatID):
+    try:
+        cursor = db.get_db().cursor()
+        
+        # Check if the stat exists
+        cursor.execute("SELECT * FROM GameStats WHERE gameStatID = %s", (gameStatID,))
+        stat = cursor.fetchone()
+        
+        if not stat:
+            cursor.close()
+            return jsonify({"error": "Game stat not found"}), 404
+        
+        # Log the removal in Reports table
+        cursor.execute("""
+            INSERT INTO Reports (adminID, repStatus, userReported, date)
+            VALUES (%s, 'completed', %s, NOW())
+        """, (4, f"GameStat {gameStatID} - Fraudulent stats removed"))
+        
+        # Delete the fraudulent stat
+        cursor.execute("DELETE FROM GameStats WHERE gameStatID = %s", (gameStatID,))
+        
+        db.get_db().commit()
+        cursor.close()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Fraudulent game stat {gameStatID} has been removed"
+        }), 200
+        
+    except Error as e:
+        db.get_db().rollback()
+        return jsonify({"error": str(e)}), 500
