@@ -62,7 +62,6 @@ INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('34', '23');
 INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('18', '48');
 INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('14', '64');
 INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('4', '58');
-INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('25', '38');
 INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('35', '68');
 INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('29', '2');
 INSERT INTO ScoutViewStats (scoutID, statsID) VALUES ('36', '22');

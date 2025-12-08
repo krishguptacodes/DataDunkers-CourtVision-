@@ -115,24 +115,16 @@ CREATE TABLE Dashboard (
     dashboardName VARCHAR(100),
     metricDisplayed VARCHAR(100),
     chartType VARCHAR(50),
-    lastUpdated DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    lastUpdated VARCHAR(50),
     filterCriteria TEXT,
     recommendation TEXT
-);
-
--- MetricFormula Table
-CREATE TABLE MetricFormula (
-    formulaID INT AUTO_INCREMENT PRIMARY KEY,
-    formulaName VARCHAR(100) NOT NULL,
-    createdBy TEXT,
-    dateCreated DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ExportRequest Table
 CREATE TABLE ExportRequests (
     exportID INT AUTO_INCREMENT PRIMARY KEY,
     format VARCHAR(20),
-    `timestamp` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `timestamp` VARCHAR(50),
     player VARCHAR(20)
 );
 
@@ -329,7 +321,7 @@ CREATE TABLE Offers (
 CREATE TABLE Footage (
     footageID INT AUTO_INCREMENT PRIMARY KEY,
     gameID INT NOT NULL,
-    `URL` VARCHAR(255) NOT NULL,
+    `URL` VARCHAR(1500) NOT NULL,
     duration INT,
     CONSTRAINT fk_footage_game
         FOREIGN KEY (gameID) REFERENCES Games(gameID)
@@ -358,23 +350,30 @@ CREATE TABLE Annotations (
 
 -- CalculatedMetrics - Metrics calculated from formulas
 CREATE TABLE CalculatedMetrics (
-    metricID INT NOT NULL,
-    formulaID INT NOT NULL,
+    metricID INT NOT NULL PRIMARY KEY,
     formulaName VARCHAR(100),
     gameID INT NOT NULL,
-    calcTimestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (metricID, formulaID),
+    calcTimestamp VARCHAR(50),
     CONSTRAINT fk_calcmetrics_game
         FOREIGN KEY (gameID) REFERENCES Games(gameID)
         ON UPDATE CASCADE
         ON DELETE CASCADE,
-    CONSTRAINT fk_calcmetrics_formula
-        FOREIGN KEY (formulaID) REFERENCES MetricFormula(formulaID)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-    INDEX idx_metric_game (gameID),
-    INDEX idx_metric_formula (formulaID)
+    INDEX idx_metric_game (gameID)
 );
+
+-- MetricFormula Table
+CREATE TABLE MetricFormula (
+    formulaID INT AUTO_INCREMENT PRIMARY KEY,
+    metricID INT,
+    formulaName VARCHAR(100) NOT NULL,
+    createdBy TEXT,
+    dateCreated VARCHAR(50),
+    CONSTRAINT fk_metricformula_metric
+        FOREIGN KEY (metricID) REFERENCES CalculatedMetrics(metricID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+);
+
 
 -- DashboardMetrics - Links dashboards to calculated metrics
 CREATE TABLE DashboardMetrics (
@@ -406,8 +405,8 @@ CREATE TABLE Validations (
     validationID INT AUTO_INCREMENT PRIMARY KEY,
     `status` VARCHAR(20),
     `timestamp` VARCHAR(20),
-    reqDate DATE,
-    responseDate DATE,
+    reqDate VARCHAR(50),
+    responseDate VARCHAR(50),
     gameStatID INT NOT NULL,
     CONSTRAINT fk_validation_gamestat
     FOREIGN KEY (gameStatID) REFERENCES GameStats(gameStatID)
