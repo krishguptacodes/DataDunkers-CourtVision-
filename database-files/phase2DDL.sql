@@ -31,6 +31,16 @@ DROP TABLE IF EXISTS Players;
  
 -- INDEPENDENT
 
+-- Team Table
+CREATE TABLE Teams (
+    teamID INT AUTO_INCREMENT PRIMARY KEY,
+    teamName VARCHAR(100) NOT NULL,
+    city VARCHAR(50),
+    teamAbbrev VARCHAR(10),
+    league VARCHAR(50),
+    INDEX idx_team_name (teamName)
+);
+
 -- Players Table
 CREATE TABLE Players (
     playerID INT AUTO_INCREMENT PRIMARY KEY,
@@ -53,16 +63,6 @@ CREATE TABLE Players (
     INDEX idx_player_name (lastName, firstName),
     INDEX idx_player_email (email),
     INDEX idx_player_team (teamID)
-);
-
--- Team Table
-CREATE TABLE Teams (
-    teamID INT AUTO_INCREMENT PRIMARY KEY,
-    teamName VARCHAR(100) NOT NULL,
-    city VARCHAR(50),
-    teamAbbrev VARCHAR(10),
-    league VARCHAR(50),
-    INDEX idx_team_name (teamName)
 );
 
 -- School Table
@@ -382,14 +382,11 @@ CREATE TABLE DashboardMetrics (
     metricID INT NOT NULL,
     PRIMARY KEY (dashboardID, metricID),
     CONSTRAINT fk_dashmetrics_dashboard
-        FOREIGN KEY (dashboardID) REFERENCES Dashboard(dashboardID)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-    CONSTRAINT fk_dashmetrics_metric
-        FOREIGN KEY (metricID) REFERENCES CalculatedMetrics(metricID)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
+    FOREIGN KEY (dashboardID) REFERENCES Dashboard(dashboardID)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
 );
+
 
 -- Reports - Tracking reported users/content
 CREATE TABLE Reports (
@@ -399,9 +396,9 @@ CREATE TABLE Reports (
     userReported VARCHAR(20),
     `date` DATETIME,
     CONSTRAINT fk_userreported_reviewer
-        FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)
-        ON UPDATE CASCADE
-        ON DELETE SET NULL
+    FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL
 );
 
 -- Validations - Stat account validations
@@ -413,7 +410,7 @@ CREATE TABLE Validations (
     responseDate DATE,
     gameStatID INT NOT NULL,
     CONSTRAINT fk_validation_gamestat
-        FOREIGN KEY (gameStatID) REFERENCES GameStats(gameStatID)
+    FOREIGN KEY (gameStatID) REFERENCES GameStats(gameStatID)
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
@@ -424,13 +421,13 @@ CREATE TABLE Verifications (
     playerID INT NOT NULL,
     adminID INT NOT NULL,
     CONSTRAINT fk_verification_player
-        FOREIGN KEY (playerID) REFERENCES Players(playerID)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-     CONSTRAINT fk_verification_admin
-        FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)
-        ON UPDATE CASCADE
-        ON DELETE SET NULL
+    FOREIGN KEY (playerID) REFERENCES Players(playerID)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE,
+    CONSTRAINT fk_verification_admin
+    FOREIGN KEY (adminID) REFERENCES SystemAdmin(adminID)
+    ON UPDATE CASCADE
+    ON DELETE SET NULL
 );
 
 -- Exports - Completed export files
@@ -454,11 +451,7 @@ CREATE TABLE MetricExports (
     exportID INT NOT NULL,
     PRIMARY KEY (formulaID, exportID),
     CONSTRAINT fk_metricexport_formula
-        FOREIGN KEY (formulaID) REFERENCES MetricFormula(formulaID)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-    CONSTRAINT fk_metricexport_export
-        FOREIGN KEY (exportID) REFERENCES Exports(exportID)
+    FOREIGN KEY (formulaID) REFERENCES MetricFormula(formulaID)
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
