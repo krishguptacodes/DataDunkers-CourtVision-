@@ -210,3 +210,31 @@ def get_ngo_donors(ngo_id):
         return jsonify(donors), 200
     except Error as e:
         return jsonify({"error": str(e)}), 500
+
+
+# Get the top 3 donors by total donation amount
+# Example: /ngo/ngos/top-donors
+@ngos.route("/ngos/top-donors", methods=["GET"])
+def get_top_donors():
+try:
+cursor = db.get_db().cursor()
+# Query to get top 3 donors by total donation amount
+cursor.execute("""
+SELECT
+d.Donor_Name,
+d.Donor_Type,
+SUM(d.Donation_Amount) as TotalDonated
+FROM
+Donors d
+GROUP BY
+d.Donor_ID, d.Donor_Name, d.Donor_Type
+ORDER BY
+TotalDonated DESC
+LIMIT 3
+""")
+top_donors = cursor.fetchall()
+cursor.close()
+return jsonify(top_donors), 200
+except Error as e:
+return jsonify({"error": str(e)}), 500
+
