@@ -2,7 +2,7 @@ name: project-app-team-repo
 
 services:
   db:
-    image: mysql:8.0
+    image: mysql:9
     container_name: mysql_db
     hostname: db
     environment:
@@ -43,6 +43,8 @@ services:
     container_name: web-app
     hostname: web-app
     volumes: ["./app/src:/appcode"]
+    env_file:             
+      - ./api/.env 
     environment:
       - WATCHPACK_POLLING=true
     ports:
