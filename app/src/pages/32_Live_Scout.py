@@ -20,7 +20,7 @@ st.write("### Select Game to Scout")
 
 try:
     # Get scout's game history to show available games
-    response = requests.get(f'http://api:4000/scouts/{scout_id}/game_history')
+    response = requests.get(f'http://web-api:4000/scouts/{scout_id}/game_history')
 
     if response.status_code == 200:
         games = response.json()
@@ -50,7 +50,7 @@ with col1:
 
     try:
         # Get game footage for this game
-        footage_response = requests.get(f'http://api:4000/players/1/videos')
+        footage_response = requests.get(f'http://web-api:4000/players/1/videos')
 
         if footage_response.status_code == 200:
             footage_list = footage_response.json()
@@ -86,7 +86,7 @@ with col2:
             }
             try:
                 response = requests.post(
-                    f'http://api:4000/scouts/{scout_id}/annotations',
+                    f'http://web-api:4000/scouts/{scout_id}/annotations',
                     json=quick_annotation
                 )
                 if response.status_code == 201:
@@ -108,7 +108,7 @@ with col2:
             }
             try:
                 response = requests.post(
-                    f'http://api:4000/scouts/{scout_id}/annotations',
+                    f'http://web-api:4000/scouts/{scout_id}/annotations',
                     json=quick_annotation
                 )
                 if response.status_code == 201:
@@ -130,7 +130,7 @@ with col2:
             }
             try:
                 response = requests.post(
-                    f'http://api:4000/scouts/{scout_id}/annotations',
+                    f'http://web-api:4000/scouts/{scout_id}/annotations',
                     json=quick_annotation
                 )
                 if response.status_code == 201:
@@ -177,7 +177,7 @@ with st.form("annotation_form"):
                 }
 
                 response = requests.post(
-                    f'http://api:4000/scouts/{scout_id}/annotations',
+                    f'http://web-api:4000/scouts/{scout_id}/annotations',
                     json=annotation_data
                 )
 
@@ -198,7 +198,7 @@ st.write(f"### Annotations for Game #{game_id}")
 
 try:
     # Fetch annotations for current game
-    annotations_response = requests.get(f'http://api:4000/games/{game_id}/annotations')
+    annotations_response = requests.get(f'http://web-api:4000/games/{game_id}/annotations')
 
     if annotations_response.status_code == 200:
         annotations_data = annotations_response.json()
@@ -225,7 +225,7 @@ st.write("---")
 st.write("### Scout Activity")
 
 try:
-    response = requests.get(f'http://api:4000/scouts/{scout_id}/game_history')
+    response = requests.get(f'http://web-api:4000/scouts/{scout_id}/game_history')
 
     if response.status_code == 200:
         games_attended = response.json()

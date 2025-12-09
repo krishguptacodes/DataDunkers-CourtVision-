@@ -81,13 +81,13 @@ if st.button("Act as Ryan Suri - System Administrator",
     logger.info("Selected System Administrator - redirecting to login")
     st.switch_page('pages/Login.py')
 
-# Basketball Player - Sean Lee
+# Basketball Player - Sean Lee (using Stephen Curry's ID as placeholder)
 if st.button('Act as Sean Lee - Basketball Player',
              type='primary',
              use_container_width=True):
     st.session_state['role'] = 'player'
     st.session_state['first_name'] = 'Sean'
-    st.session_state['user_id'] = 101
+    st.session_state['user_id'] = 2  # Changed from 101 to 2 (Stephen Curry)
     st.session_state['selected_user'] = 'Sean Lee'
     logger.info("Selected Basketball Player - redirecting to login")
     st.switch_page('pages/Login.py')

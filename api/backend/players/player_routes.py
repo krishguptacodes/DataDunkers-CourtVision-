@@ -416,7 +416,6 @@ def get_recruiting_schools(player_id):
     schools = cursor.fetchall()
 
     return jsonify(schools), 200
-<<<<<<< HEAD
 
 
 # ------------------------------------------------------------
@@ -492,5 +491,3 @@ def get_aggregate_player_stats():
     stats = cursor.fetchall()
 
     return jsonify(stats), 200
-=======
->>>>>>> 6aa74876b5b49d9f8f6e16036ffd5c08f07a2cc5
