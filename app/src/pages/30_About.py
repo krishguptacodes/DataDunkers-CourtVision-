@@ -18,4 +18,4 @@ Our platform offers player comparisons, trend dashboards, and integrated video-s
 
 # Add a button to return to home page
 if st.button("Return to Home", type="primary"):
-    st.switch_page("Home.py")
+    st.switch_page("../Home.py")

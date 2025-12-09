@@ -112,7 +112,12 @@ def create_player_verification(player_id):
     ))
     db.get_db().commit()
 
-    return jsonify({'message': 'Verification request created successfully'}), 201
+    verification_id = cursor.lastrowid
+
+    return jsonify({
+        'message': 'Verification request created successfully',
+        'validationID': verification_id
+    }), 201
 
 
 # ------------------------------------------------------------
@@ -175,6 +180,32 @@ def get_player_permissions(player_id):
 def update_player_permissions(player_id):
     """Manage player permissions for correct accessibility"""
     logger.info(f'PUT /players/{player_id}/permissions route')
+
+    data = request.json
+
+    query = '''
+        UPDATE Players
+        SET AcctStatus = %s
+        WHERE playerID = %s
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (
+        data.get('AcctStatus'),
+        player_id
+    ))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Player permissions updated successfully'}), 200
+
+
+# ------------------------------------------------------------
+# PUT /admin/users/players/<player_id>/permissions - Alternative route for managing player permissions
+# Used by Manage Users page
+@admin.route('/admin/users/players/<int:player_id>/permissions', methods=['PUT'])
+def update_player_permissions_alt(player_id):
+    """Manage player permissions (alternative route for admin UI)"""
+    logger.info(f'PUT /admin/users/players/{player_id}/permissions route')
 
     data = request.json
 
