@@ -146,6 +146,77 @@ def add_player_stats(player_id):
 
 
 # ------------------------------------------------------------
+# POST /players/<player_id>/game-and-stats - Add NEW game + stats
+# [Sean-1] - Enhanced version that creates game first
+@players.route('/players/<int:player_id>/game-and-stats', methods=['POST'])
+def add_game_and_stats(player_id):
+    """
+    Add a new game and the player's stats for that game in one operation.
+    This is useful when a player wants to log a game that isn't in the system yet.
+    """
+    logger.info(f'POST /players/{player_id}/game-and-stats route')
+
+    data = request.json
+    cursor = db.get_db().cursor()
+
+    try:
+        # Step 1: Create the game
+        game_query = '''
+            INSERT INTO Game (date, startTime, endTime, opponent, venue, tournament, score)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        '''
+        cursor.execute(game_query, (
+            data['date'],
+            data.get('startTime', '00:00:00'),
+            data.get('endTime', '00:00:00'),
+            data['opponent'],
+            data['venue'],
+            data.get('tournament', ''),
+            data.get('score', '')
+        ))
+
+        # Step 2: Get the new gameID that was just created
+        new_game_id = cursor.lastrowid
+        logger.info(f'Created new game with ID: {new_game_id}')
+
+        # Step 3: Insert the player's stats for that game
+        stats_query = '''
+            INSERT INTO Game_Stats (gameID, playerID, minutes, points, rebounds, assists, steals, blocks, turnovers, fouls, three_pt)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        '''
+        cursor.execute(stats_query, (
+            new_game_id,
+            player_id,
+            data['minutes'],
+            data['points'],
+            data['rebounds'],
+            data['assists'],
+            data['steals'],
+            data['blocks'],
+            data['turnovers'],
+            data['fouls'],
+            data['three_pt']
+        ))
+
+        # CRITICAL: Commit the changes!
+        db.get_db().commit()
+
+        logger.info(f'Successfully added game {new_game_id} and stats for player {player_id}')
+
+        return jsonify({
+            'message': 'Game and stats added successfully',
+            'gameID': new_game_id,
+            'playerID': player_id
+        }), 201
+
+    except Exception as e:
+        # If anything goes wrong, rollback
+        logger.error(f'Error adding game and stats: {str(e)}')
+        db.get_db().rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# ------------------------------------------------------------
 # PUT /players/<player_id>/stats - Update player stats (admin)
 # [Ryan Suri - 1]
 @players.route('/players/<int:player_id>/stats/<int:game_id>', methods=['PUT'])
@@ -345,3 +416,81 @@ def get_recruiting_schools(player_id):
     schools = cursor.fetchall()
 
     return jsonify(schools), 200
+<<<<<<< HEAD
+
+
+# ------------------------------------------------------------
+# GET /players/<player_id>/schedule - Get player's upcoming games
+# [Sara Chin - 5]
+@players.route('/players/<int:player_id>/schedule', methods=['GET'])
+def get_player_schedule(player_id):
+    """Returns future games that the player will be playing in"""
+    logger.info(f'GET /players/{player_id}/schedule route')
+
+    query = '''
+        SELECT g.gameID, g.date, g.startTime, g.opponent, g.venue, g.tournament
+        FROM Game g
+        JOIN PlayerSchedule ps ON g.gameID = ps.gameID
+        WHERE ps.playerID = %s AND g.date >= CURDATE()
+        ORDER BY g.date ASC
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (player_id,))
+    schedule = cursor.fetchall()
+
+    return jsonify(schedule), 200
+
+
+# ------------------------------------------------------------
+# GET /players/stats/aggregate - Get aggregated player stats with filters
+# [John Tukey - 1, 4]
+@players.route('/players/stats/aggregate', methods=['GET'])
+def get_aggregate_player_stats():
+    """
+    Return clean, standardized datasets for analysis.
+    Supports filtering by position, competition level, etc.
+    """
+    logger.info('GET /players/stats/aggregate route')
+
+    # Get query parameters for filtering
+    position = request.args.get('position')
+    min_points = request.args.get('min_points', 0)
+
+    query = '''
+        SELECT 
+            p.playerID,
+            p.firstName,
+            p.lastName,
+            ps.position,
+            COUNT(DISTINCT gs.gameID) as games_played,
+            AVG(gs.points) as avg_points,
+            AVG(gs.rebounds) as avg_rebounds,
+            AVG(gs.assists) as avg_assists,
+            AVG(gs.steals) as avg_steals
+        FROM Players p
+        JOIN Playsin ps ON p.playerID = ps.playerID
+        JOIN Game_Stats gs ON p.playerID = gs.playerID
+        WHERE 1=1
+    '''
+
+    params = []
+
+    if position:
+        query += ' AND ps.position = %s'
+        params.append(position)
+
+    query += '''
+        GROUP BY p.playerID, p.firstName, p.lastName, ps.position
+        HAVING AVG(gs.points) >= %s
+        ORDER BY avg_points DESC
+    '''
+    params.append(min_points)
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, params)
+    stats = cursor.fetchall()
+
+    return jsonify(stats), 200
+=======
+>>>>>>> 6aa74876b5b49d9f8f6e16036ffd5c08f07a2cc5

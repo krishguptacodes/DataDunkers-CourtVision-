@@ -183,7 +183,7 @@ def update_scout_permissions(scout_id):
 
 
 # ------------------------------------------------------------
-# POST /footages/<footage_id>/annotation - Add annotation
+# POST /footages/<footage_id>/annotation - Add annotation (OLD - DEPRECATED)
 # [Sara Chin - 2]
 @scouts.route('/footages/<int:footage_id>/annotation', methods=['POST'])
 def add_footage_annotation(footage_id):
@@ -207,6 +207,94 @@ def add_footage_annotation(footage_id):
     db.get_db().commit()
 
     return jsonify({'message': 'Annotation added successfully'}), 201
+
+
+# ------------------------------------------------------------
+# POST /scouts/<scout_id>/annotations - Add live game annotation (NEW)
+# [Sara Chin - 2]
+@scouts.route('/scouts/<int:scout_id>/annotations', methods=['POST'])
+def add_live_annotation(scout_id):
+    """
+    Add annotation during live game scouting.
+    Creates placeholder report if needed.
+    """
+    logger.info(f'POST /scouts/{scout_id}/annotations route')
+
+    data = request.json
+    cursor = db.get_db().cursor()
+
+    try:
+        player_id = data.get('playerID') or 1  # Default to player 1 for general notes
+
+        # Check if report exists for this scout/player
+        cursor.execute('''
+            SELECT reportID 
+            FROM PlayerReports 
+            WHERE scoutID = %s AND playerID = %s
+            LIMIT 1
+        ''', (scout_id, player_id))
+
+        existing_report = cursor.fetchone()
+
+        if existing_report:
+            report_id = existing_report['reportID']
+        else:
+            # Create placeholder report
+            cursor.execute('''
+                INSERT INTO PlayerReports (playerID, scoutID, summary, strengths, weaknesses)
+                VALUES (%s, %s, 'Live scouting session', '', '')
+            ''', (player_id, scout_id))
+            report_id = cursor.lastrowid
+
+        # Insert annotation
+        cursor.execute('''
+            INSERT INTO Annotations (reportID, annotatedBy, text, timestamp)
+            VALUES (%s, %s, %s, %s)
+        ''', (
+            report_id,
+            scout_id,
+            data.get('text'),
+            data.get('timestamp', '00:00:00')
+        ))
+
+        db.get_db().commit()
+
+        return jsonify({
+            'message': 'Annotation added successfully',
+            'annotationID': cursor.lastrowid,
+            'reportID': report_id
+        }), 201
+
+    except Exception as e:
+        logger.error(f'Error adding annotation: {str(e)}')
+        db.get_db().rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# ------------------------------------------------------------
+# GET /games/<game_id>/annotations - Get all annotations for a game
+# [Sara Chin - 2]
+@scouts.route('/games/<int:game_id>/annotations', methods=['GET'])
+def get_game_annotations(game_id):
+    """Get all annotations made during a specific game"""
+    logger.info(f'GET /games/{game_id}/annotations route')
+
+    query = '''
+        SELECT a.annotationID, a.text, a.timestamp,
+               s.firstName as scout_first, s.lastName as scout_last,
+               p.firstName as player_first, p.lastName as player_last
+        FROM Annotations a
+        JOIN Scout s ON a.annotatedBy = s.scoutID
+        JOIN PlayerReports pr ON a.reportID = pr.reportID
+        LEFT JOIN Players p ON pr.playerID = p.playerID
+        ORDER BY a.timestamp ASC
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query)
+    annotations = cursor.fetchall()
+
+    return jsonify(annotations), 200
 
 
 # ------------------------------------------------------------
