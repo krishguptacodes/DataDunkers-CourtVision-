@@ -2,7 +2,7 @@ name: project-app-team-repo
 
 services:
   db:
-    image: mysql:9
+    image: mysql:8
     container_name: mysql_db
     hostname: db
     environment:
@@ -22,7 +22,7 @@ services:
   api:
     build: ./api
     container_name: web-api
-    hostname: web-api
+    hostname: api
     volumes: ["./api:/apicode"]
     environment:
       - WATCHPACK_POLLING=true
