@@ -378,3 +378,42 @@ def add_report_footage(player_id):
     db.get_db().commit()
 
     return jsonify({'message': 'Footage added to report successfully'}), 201
+
+
+# ------------------------------------------------------------
+# POST /scouts/<scout_id>/schedule - Add game to scout's schedule
+# [Sara Chin - 5]
+@scouts.route('/scouts/<int:scout_id>/schedule', methods=['POST'])
+def add_scout_schedule(scout_id):
+    """Add game to scout's schedule"""
+    logger.info(f'POST /scouts/{scout_id}/schedule route')
+
+    data = request.json
+    cursor = db.get_db().cursor()
+
+    try:
+        # Insert into Scout_Activity
+        query = '''
+            INSERT INTO Scout_Activity (scoutID, gameID, gamesAttended, notes)
+            VALUES (%s, %s, 1, %s)
+        '''
+        cursor.execute(query, (
+            scout_id,
+            data.get('gameID'),
+            data.get('notes', '')
+        ))
+
+        db.get_db().commit()
+
+        logger.info(f'Game {data.get("gameID")} added to scout {scout_id} schedule')
+
+        return jsonify({
+            'message': 'Game added to schedule successfully',
+            'scoutID': scout_id,
+            'gameID': data.get('gameID')
+        }), 201
+
+    except Exception as e:
+        logger.error(f'Error adding to schedule: {str(e)}')
+        db.get_db().rollback()
+        return jsonify({'error': str(e)}), 500

@@ -107,15 +107,26 @@ with st.form("add_game"):
 
     if st.form_submit_button("Add to Schedule", type="primary"):
         try:
-            # Note: This would ideally create a Scout_Activity record
-            # For now, we'll show success message
-            # In production, you'd want a POST endpoint for scout scheduling
+            schedule_data = {
+                'gameID': int(game_id),
+                'notes': notes
+            }
 
-            st.success(f"Game {game_id} added to your schedule!")
-            st.info("Players to scout: " + player_ids)
+            response = requests.post(
+                f'http://web-api:4000/scouts/{scout_id}/schedule',
+                json=schedule_data
+            )
 
-            if notes:
-                st.write(f"**Notes:** {notes}")
+            if response.status_code == 201:
+                st.success(f"✅ Game {game_id} added to your schedule!")
+                st.info("Players to scout: " + player_ids)
+                if notes:
+                    st.write(f"**Notes:** {notes}")
+                st.balloons()
+                st.rerun()
+            else:
+                st.error(f"❌ Failed to add: {response.status_code}")
+                st.error(f"Error: {response.text}")
 
         except Exception as e:
             st.error(f"Error adding to schedule: {str(e)}")
