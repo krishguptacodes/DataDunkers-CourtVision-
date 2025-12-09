@@ -30,7 +30,7 @@ if st.button("Search", type='primary'):
             params['position'] = position
 
         # Get players from aggregate stats API
-        response = requests.get('http://api:4000/players/stats/aggregate', params=params)
+        response = requests.get('http://web-api:4000/players/stats/aggregate', params=params)
 
         if response.status_code == 200:
             players = response.json()
@@ -53,7 +53,7 @@ if st.button("Search", type='primary'):
                     filtered_players = []
                     for player_id in df['playerID'].tolist():
                         try:
-                            player_response = requests.get(f'http://api:4000/players/{player_id}')
+                            player_response = requests.get(f'http://web-api:4000/players/{player_id}')
                             if player_response.status_code == 200:
                                 player_data = player_response.json()
                                 if player_data.get('height', 0) >= min_height:
@@ -86,7 +86,7 @@ if st.button("Search", type='primary'):
 
                     if st.button("View Full Profile"):
                         try:
-                            profile_response = requests.get(f'http://api:4000/players/{selected_player}')
+                            profile_response = requests.get(f'http://web-api:4000/players/{selected_player}')
 
                             if profile_response.status_code == 200:
                                 profile = profile_response.json()

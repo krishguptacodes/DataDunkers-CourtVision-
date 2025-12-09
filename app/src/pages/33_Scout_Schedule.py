@@ -28,7 +28,7 @@ st.write("### Upcoming Games")
 try:
     # Get player schedules for upcoming games
     # Using player 1 as example, in production would aggregate across all players
-    response = requests.get('http://api:4000/players/1/schedule')
+    response = requests.get('http://web-api:4000/players/1/schedule')
 
     if response.status_code == 200:
         schedule_data = response.json()
@@ -70,7 +70,7 @@ st.write("### My Scouting Calendar")
 
 try:
     # Get games this scout is planning to attend
-    response = requests.get(f'http://api:4000/scouts/{scout_id}/game_history')
+    response = requests.get(f'http://web-api:4000/scouts/{scout_id}/game_history')
 
     if response.status_code == 200:
         my_games = response.json()
@@ -125,7 +125,7 @@ st.write("---")
 st.write("### Scouting Stats")
 
 try:
-    response = requests.get(f'http://api:4000/scouts/{scout_id}/game_history')
+    response = requests.get(f'http://web-api:4000/scouts/{scout_id}/game_history')
 
     if response.status_code == 200:
         games_data = response.json()
@@ -136,7 +136,7 @@ try:
             st.metric("Games Scouted", len(games_data))
         with col2:
             # Get unique players scouted
-            players_response = requests.get(f'http://api:4000/scouts/{scout_id}/player_history')
+            players_response = requests.get(f'http://web-api:4000/scouts/{scout_id}/player_history')
             if players_response.status_code == 200:
                 players_data = players_response.json()
                 st.metric("Players Evaluated", len(players_data))

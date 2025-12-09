@@ -32,7 +32,7 @@ with st.form("upload_video"):
                 }
 
                 response = requests.post(
-                    f'http://api:4000/players/{player_id}/videos',
+                    f'http://web-api:4000/players/{player_id}/videos',
                     json=video_data
                 )
 
@@ -54,7 +54,7 @@ st.write("### My Highlight Videos")
 
 try:
     # Get videos from API
-    response = requests.get(f'http://api:4000/players/{player_id}/videos')
+    response = requests.get(f'http://web-api:4000/players/{player_id}/videos')
 
     if response.status_code == 200:
         videos_data = response.json()

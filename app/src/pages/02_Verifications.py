@@ -15,7 +15,7 @@ st.write("### Pending Verifications")
 
 try:
     # Get pending verifications from API
-    response = requests.get('http://api:4000/admin/pending-verifications')
+    response = requests.get('http://web-api:4000/admin/pending-verifications')
 
     if response.status_code == 200:
         pending_data = response.json()
@@ -90,7 +90,7 @@ if pending is not None and len(pending) > 0:
 
                     # Update verification status
                     update_response = requests.put(
-                        f'http://api:4000/players/{player_id}/verifications/{verification_id}',
+                        f'http://web-api:4000/players/{player_id}/verifications/{verification_id}',
                         json={
                             'status': 'approved',
                             'verifiedBy': 1,  # Admin ID
@@ -118,7 +118,7 @@ if pending is not None and len(pending) > 0:
 
                     # Update verification status
                     update_response = requests.put(
-                        f'http://api:4000/players/{player_id}/verifications/{verification_id}',
+                        f'http://web-api:4000/players/{player_id}/verifications/{verification_id}',
                         json={
                             'status': 'rejected',
                             'verifiedBy': 1,  # Admin ID
@@ -143,7 +143,7 @@ st.write("### Verification Statistics")
 
 try:
     # Get system statistics from API
-    stats_response = requests.get('http://api:4000/admin/statistics')
+    stats_response = requests.get('http://web-api:4000/admin/statistics')
 
     if stats_response.status_code == 200:
         stats = stats_response.json()
