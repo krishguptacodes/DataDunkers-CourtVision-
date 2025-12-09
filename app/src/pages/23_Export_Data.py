@@ -39,7 +39,7 @@ if export_type == "Player Statistics":
     if st.button("Generate Export", type="primary"):
         try:
             # Get player statistics from API
-            response = requests.get('http://web-api:4000/players/stats/aggregate')
+            response = requests.get('http://api:4000/players/stats/aggregate')
 
             if response.status_code == 200:
                 players_data = response.json()
@@ -71,7 +71,7 @@ if export_type == "Player Statistics":
                         'status': 'completed'
                     }
 
-                    requests.post('http://web-api:4000/analytics/datasets/export', json=export_request_data)
+                    requests.post('http://api:4000/analytics/datasets/export', json=export_request_data)
 
                     # Generate download based on format
                     if format_type == "CSV":
@@ -114,7 +114,7 @@ elif export_type == "Game Data":
     if st.button("Generate Export", type="primary"):
         try:
             # Get datasets from API
-            response = requests.get('http://web-api:4000/analytics/datasets')
+            response = requests.get('http://api:4000/analytics/datasets')
 
             if response.status_code == 200:
                 game_data = response.json()
@@ -135,7 +135,7 @@ elif export_type == "Game Data":
                         'status': 'completed'
                     }
 
-                    requests.post('http://web-api:4000/analytics/datasets/export', json=export_request_data)
+                    requests.post('http://api:4000/analytics/datasets/export', json=export_request_data)
 
                     st.download_button(
                         label="📥 Download",
@@ -183,7 +183,7 @@ elif export_type == "Scout Reports":
                 'status': 'completed'
             }
 
-            requests.post('http://web-api:4000/analytics/datasets/export', json=export_request_data)
+            requests.post('http://api:4000/analytics/datasets/export', json=export_request_data)
 
         except Exception as e:
             st.warning(f"Could not log export: {str(e)}")
@@ -203,7 +203,7 @@ else:  # Custom Query
     with col1:
         if st.button("Preview Data", type="secondary"):
             try:
-                response = requests.get('http://web-api:4000/analytics/datasets')
+                response = requests.get('http://api:4000/analytics/datasets')
 
                 if response.status_code == 200:
                     data = response.json()
@@ -223,7 +223,7 @@ else:  # Custom Query
     with col2:
         if st.button("Execute & Export", type="primary"):
             try:
-                response = requests.get('http://web-api:4000/analytics/datasets')
+                response = requests.get('http://api:4000/analytics/datasets')
 
                 if response.status_code == 200:
                     data = response.json()
@@ -240,7 +240,7 @@ else:  # Custom Query
                             'status': 'completed'
                         }
 
-                        requests.post('http://web-api:4000/analytics/datasets/export', json=export_request_data)
+                        requests.post('http://api:4000/analytics/datasets/export', json=export_request_data)
 
                         st.success("✅ Export generated successfully")
                         st.download_button(
@@ -263,7 +263,7 @@ st.write("### Recent Exports")
 
 try:
     # Get export requests from API
-    response = requests.get('http://web-api:4000/analytics/export-requests')
+    response = requests.get('http://api:4000/analytics/export-requests')
 
     if response.status_code == 200:
         exports_data = response.json()

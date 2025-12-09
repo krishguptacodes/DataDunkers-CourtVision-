@@ -18,7 +18,7 @@ st.write("#### Saved Formulas")
 
 try:
     # Get formulas from API
-    response = requests.get('http://web-api:4000/analytics/metrics')
+    response = requests.get('http://api:4000/analytics/metrics')
 
     if response.status_code == 200:
         formulas_data = response.json()
@@ -90,7 +90,7 @@ with st.form("new_formula"):
                     }
 
                     create_response = requests.post(
-                        'http://web-api:4000/analytics/metrics',
+                        'http://api:4000/analytics/metrics',
                         json=formula_data
                     )
 
@@ -110,7 +110,7 @@ st.write("---")
 st.write("### Manage Formulas")
 
 try:
-    response = requests.get('http://web-api:4000/analytics/metrics')
+    response = requests.get('http://api:4000/analytics/metrics')
 
     if response.status_code == 200:
         formulas_data = response.json()
@@ -134,7 +134,7 @@ try:
                 if st.button("🗑️ Delete Formula", type="secondary"):
                     try:
                         delete_response = requests.delete(
-                            f'http://web-api:4000/analytics/metrics/{selected_formula_id}'
+                            f'http://api:4000/analytics/metrics/{selected_formula_id}'
                         )
 
                         if delete_response.status_code == 200:
@@ -172,7 +172,7 @@ if st.button("Calculate Metrics", type="primary"):
 
     try:
         # Get player stats to calculate metrics on
-        response = requests.get('http://web-api:4000/players/stats/aggregate')
+        response = requests.get('http://api:4000/players/stats/aggregate')
 
         if response.status_code == 200:
             players_data = response.json()

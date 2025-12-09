@@ -17,7 +17,7 @@ st.write("### Platform Overview")
 
 try:
     # Get system statistics from API
-    stats_response = requests.get('http://web-api:4000/admin/statistics')
+    stats_response = requests.get('http://api:4000/admin/statistics')
 
     if stats_response.status_code == 200:
         stats = stats_response.json()
@@ -93,7 +93,7 @@ st.write("### Existing Reports")
 
 try:
     # Get all reports from API
-    reports_response = requests.get('http://web-api:4000/reports')
+    reports_response = requests.get('http://api:4000/reports')
 
     if reports_response.status_code == 200:
         reports_data = reports_response.json()
@@ -140,7 +140,7 @@ with st.form("custom_report"):
                 'status': 'active'
             }
 
-            create_response = requests.post('http://web-api:4000/reports', json=report_data)
+            create_response = requests.post('http://api:4000/reports', json=report_data)
 
             if create_response.status_code in [200, 201]:
                 st.success(f"✅ {report_type} report generated successfully!")
@@ -154,7 +154,7 @@ with st.form("custom_report"):
                     'status': 'completed'
                 }
 
-                export_response = requests.post('http://web-api:4000/analytics/datasets/export', json=export_data)
+                export_response = requests.post('http://api:4000/analytics/datasets/export', json=export_data)
 
                 if export_response.status_code in [200, 201]:
                     st.download_button(

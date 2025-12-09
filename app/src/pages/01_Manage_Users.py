@@ -19,7 +19,7 @@ if user_type == "Players":
 
     try:
         # Get all players from API
-        response = requests.get('http://web-api:4000/admin/users?type=players')
+        response = requests.get('http://api:4000/admin/users?type=players')
 
         if response.status_code == 200:
             data = response.json()
@@ -66,7 +66,7 @@ if user_type == "Players":
             try:
                 # Call API to update player status
                 update_response = requests.put(
-                    f'http://web-api:4000/admin/users/players/{player_id}/permissions',
+                    f'http://api:4000/admin/users/players/{player_id}/permissions',
                     json={'AcctStatus': new_status}
                 )
 
@@ -83,7 +83,7 @@ else:  # Scouts
 
     try:
         # Get all scouts from API
-        response = requests.get('http://web-api:4000/admin/users?type=scouts')
+        response = requests.get('http://api:4000/admin/users?type=scouts')
 
         if response.status_code == 200:
             data = response.json()
@@ -132,9 +132,9 @@ with col2:
             try:
                 # Call API to delete user
                 if delete_type == "player":
-                    delete_response = requests.delete(f'http://web-api:4000/players/{delete_id}')
+                    delete_response = requests.delete(f'http://api:4000/players/{delete_id}')
                 else:
-                    delete_response = requests.delete(f'http://web-api:4000/scouts/{delete_id}')
+                    delete_response = requests.delete(f'http://api:4000/scouts/{delete_id}')
 
                 if delete_response.status_code == 200:
                     st.error(f"User {delete_id} has been removed. Reason: {reason}")

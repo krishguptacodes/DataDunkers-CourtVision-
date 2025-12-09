@@ -23,7 +23,7 @@ st.write('### Season Statistics 2024-25')
 
 try:
     # Call the aggregate stats endpoint
-    response = requests.get('http://web-api:4000/players/stats/aggregate')
+    response = requests.get('http://api:4000/players/stats/aggregate')
 
     if response.status_code == 200:
         all_stats = response.json()
@@ -132,7 +132,7 @@ with st.form("add_stats_form"):
 
                 # POST to NEW combined endpoint
                 response = requests.post(
-                    f'http://web-api:4000/players/{player_id}/game-and-stats',
+                    f'http://api:4000/players/{player_id}/game-and-stats',
                     json=game_and_stats_data
                 )
 
@@ -153,7 +153,7 @@ st.write("---")
 st.write("### Recent Games")
 
 try:
-    games_response = requests.get(f'http://web-api:4000/players/{player_id}/stats')
+    games_response = requests.get(f'http://api:4000/players/{player_id}/stats')
 
     if games_response.status_code == 200:
         games_data = games_response.json()

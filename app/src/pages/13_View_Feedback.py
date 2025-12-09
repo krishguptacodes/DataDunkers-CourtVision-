@@ -17,7 +17,7 @@ st.write("### Feedback from Scouts")
 
 try:
     # Get feedback from API
-    response = requests.get(f'http://web-api:4000/players/{player_id}/feedback')
+    response = requests.get(f'http://api:4000/players/{player_id}/feedback')
 
     if response.status_code == 200:
         feedback_list = response.json()
@@ -85,7 +85,7 @@ st.write("---")
 st.write("### Feedback Statistics")
 
 try:
-    response = requests.get(f'http://web-api:4000/players/{player_id}/feedback')
+    response = requests.get(f'http://api:4000/players/{player_id}/feedback')
 
     if response.status_code == 200:
         feedback_list = response.json()

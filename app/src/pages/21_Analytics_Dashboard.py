@@ -30,7 +30,7 @@ st.write("### League-Wide Statistics")
 try:
     # Get aggregate stats from API
     position_filter = "" if position == "All" else f"?position={position}"
-    response = requests.get(f'http://web-api:4000/players/stats/aggregate{position_filter}')
+    response = requests.get(f'http://api:4000/players/stats/aggregate{position_filter}')
 
     if response.status_code == 200:
         stats_data = response.json()
@@ -83,7 +83,7 @@ st.write("---")
 st.write("### Points Per Game Distribution")
 
 try:
-    response = requests.get('http://web-api:4000/players/stats/aggregate')
+    response = requests.get('http://api:4000/players/stats/aggregate')
 
     if response.status_code == 200:
         stats_data = response.json()
@@ -123,7 +123,7 @@ with col1:
     st.write("### Top Scorers")
 
     try:
-        response = requests.get('http://web-api:4000/players/stats/aggregate?min_points=0')
+        response = requests.get('http://api:4000/players/stats/aggregate?min_points=0')
 
         if response.status_code == 200:
             stats_data = response.json()
@@ -153,7 +153,7 @@ with col2:
     st.write("### Top Assist Leaders")
 
     try:
-        response = requests.get('http://web-api:4000/players/stats/aggregate')
+        response = requests.get('http://api:4000/players/stats/aggregate')
 
         if response.status_code == 200:
             stats_data = response.json()
@@ -185,7 +185,7 @@ st.write("### Compare Players")
 
 try:
     # Get list of players for comparison
-    response = requests.get('http://web-api:4000/players/stats/aggregate')
+    response = requests.get('http://api:4000/players/stats/aggregate')
 
     if response.status_code == 200:
         players_data = response.json()
