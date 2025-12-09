@@ -1,4 +1,4 @@
-### Fall 2025 CS 3200 DataDunkers Project
+#### Fall 2025 CS 3200 DataDunkers Project
 
 ## Our Video
 https://screenapp.io/app/v/7kR8nKE6Rt 
