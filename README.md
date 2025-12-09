@@ -98,6 +98,8 @@ Schools - College and university information
 Offers - Scholarship offers to players
 Dashboard - Analytics dashboards and visualizations
 
+Note: Schema has undergone some changes to accommodate changes with the DDL, mock data and other things.
+
 Testing the API
 bash# Test player profile
 curl http://localhost:4000/players/4/profile
