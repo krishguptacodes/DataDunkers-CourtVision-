@@ -1,316 +1,347 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request, jsonify, make_response
 from backend.db_connection import db
-from mysql.connector import Error
-from flask import current_app
+import logging
 
-# Create a Blueprint for player routes
-players = Blueprint("players", __name__)
+logger = logging.getLogger(__name__)
+players = Blueprint('players', __name__)
 
-# add new game's stats for player 
-@players.route('/<int:player_id>/game-stats', methods=['POST'])
-def add_game_stats_for_player(player_id):
-    try:
-        data = request.json
-        cursor = db.get_db().cursor()
-        
-        # Validate that player exists
-        cursor.execute("SELECT playerID FROM Players WHERE playerID = %s", (player_id,))
-        if not cursor.fetchone():
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': f'Player {player_id} not found'
-            }), 404
-        
-        # Validate that game exists
-        game_id = data.get('gameID')
-        cursor.execute("SELECT gameID FROM Games WHERE gameID = %s", (game_id,))
-        if not cursor.fetchone():
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': f'Game {game_id} not found'
-            }), 404
-        
-        # Generate a new gameStatID (since it's part of composite primary key)
-        cursor.execute("SELECT MAX(gameStatID) FROM GameStats")
-        max_id = cursor.fetchone()[0]
-        new_game_stat_id = (max_id or 0) + 1
-        
-        # Insert game statistics
-        cursor.execute("""
-            INSERT INTO GameStats 
-            (gameStatID, gameID, playerID, minutes, points, rebounds, assists, 
-             steals, blocks, turnovers, fouls, threePts)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """, (
-            new_game_stat_id,
-            game_id,
-            player_id,
-            data.get('minutes', 0),
-            data.get('points', 0),
-            data.get('rebounds', 0),
-            data.get('assists', 0),
-            data.get('steals', 0),
-            data.get('blocks', 0),
-            data.get('turnovers', 0),
-            data.get('fouls', 0),
-            data.get('threePts', 0)
-        ))
-        
-        db.get_db().commit()
-        cursor.close()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Game statistics added successfully',
-            'gameStatID': new_game_stat_id,
-            'playerID': player_id,
-            'gameID': game_id
-        }), 201
-        
-    except Error as e:
-        db.get_db().rollback()
-        return jsonify({"error": str(e)}), 500
 
-# Return all game stats for this player across the season
-@players.route('/<int:player_id>/game-stats', methods=['GET'])
-def get_game_stats_for_player(player_id):
-    try:
-        cursor = db.get_db().cursor(dictionary=True)
-        
-        # Validate that player exists
-        cursor.execute("SELECT playerID FROM Players WHERE playerID = %s", (player_id,))
-        if not cursor.fetchone():
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': f'Player {player_id} not found'
-            }), 404
-        
-        # Retrieve all game stats for this player, joined with game data
-        cursor.execute("""
-            SELECT 
-                gs.gameStatID,
-                gs.gameID,
-                g.date,
-                g.tournament,
-                gs.minutes,
-                gs.points,
-                gs.rebounds,
-                gs.assists,
-                gs.steals,
-                gs.blocks,
-                gs.turnovers,
-                gs.fouls,
-                gs.threePts
-            FROM GameStats gs
-            JOIN Games g ON gs.gameID = g.gameID
-            WHERE gs.playerID = %s
-            ORDER BY g.date DESC
-        """, (player_id,))
-        
-        stats = cursor.fetchall()
-        cursor.close()
-        
-        return jsonify({
-            'success': True,
-            'playerID': player_id,
-            'count': len(stats),
-            'gameStats': stats
-        }), 200
-
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
-
-# Get full profile information for a player
-@players.route('/<int:player_id>/profile', methods=['GET'])
+# ------------------------------------------------------------
+# GET /players/<player_id> - Get player profile
+# [Sean-4]
+@players.route('/players/<int:player_id>', methods=['GET'])
 def get_player_profile(player_id):
-    try:
-        cursor = db.get_db().cursor()
-        
-        # Get full player profile with team information
-        cursor.execute("""
-            SELECT 
-                p.playerID,
-                p.firstName,
-                p.lastName,
-                p.email,
-                p.dateOfBirth,
-                p.age,
-                p.phoneNumber,
-                p.userBio,
-                p.height,
-                p.weight,
-                p.acctStatus,
-                p.position,
-                p.teamID,
-                t.teamName,
-                t.city,
-                t.teamAbbrev,
-                t.league
-            FROM Players p
-            LEFT JOIN Teams t ON p.teamID = t.teamID
-            WHERE p.playerID = %s
-        """, (player_id,))
-        
-        profile = cursor.fetchone()
-        cursor.close()
-        
-        if not profile:
-            return jsonify({
-                'success': False,
-                'message': f'Player {player_id} not found'
-            }), 404
-        
-        return jsonify({
-            'success': True,
-            'profile': {
-                'playerID': profile['playerID'],
-                'firstName': profile['firstName'],
-                'lastName': profile['lastName'],
-                'email': profile['email'],
-                'dateOfBirth': profile['dateOfBirth'],
-                'age': profile['age'],
-                'phoneNumber': profile['phoneNumber'],
-                'bio': profile['userBio'],
-                'height': profile['height'],
-                'weight': profile['weight'],
-                'position': profile['position'],
-                'acctStatus': profile['acctStatus'],
-                'team': {
-                    'teamID': profile['teamID'],
-                    'teamName': profile['teamName'],
-                    'city': profile['city'],
-                    'teamAbbrev': profile['teamAbbrev'],
-                    'league': profile['league']
-                } if profile['teamID'] else None
-            }
-        }), 200
-        
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
+    """Return full profile info for this player (bio, height, position, team)"""
+    logger.info(f'GET /players/{player_id} route')
+
+    query = '''
+        SELECT p.playerID, p.firstName, p.lastName, p.email, p.phone_Number,
+               p.UserBio, p.DateofBirth, p.height, p.weight, p.AcctStatus,
+               t.team_name, t.city as team_city, ps.position, ps.jerseyNumber
+        FROM Players p
+        LEFT JOIN Playsin ps ON p.playerID = ps.playerID
+        LEFT JOIN Team t ON ps.team_id = t.team_id
+        WHERE p.playerID = %s
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (player_id,))
+    result = cursor.fetchone()
+
+    if not result:
+        return jsonify({'error': 'Player not found'}), 404
+
+    return jsonify(result), 200
 
 
-# Upload a new highlight video for a player
-@players.route('/<int:player_id>/videos', methods=['POST'])
+# ------------------------------------------------------------
+# PUT /players/<player_id> - Update player profile
+# [Sean-4]
+@players.route('/players/<int:player_id>', methods=['PUT'])
+def update_player_profile(player_id):
+    """Update profile information (bio, height, team, etc.)"""
+    logger.info(f'PUT /players/{player_id} route')
+
+    data = request.json
+
+    query = '''
+        UPDATE Players 
+        SET firstName = %s, lastName = %s, email = %s, 
+            phone_Number = %s, UserBio = %s, height = %s, weight = %s
+        WHERE playerID = %s
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (
+        data.get('firstName'),
+        data.get('lastName'),
+        data.get('email'),
+        data.get('phone_Number'),
+        data.get('UserBio'),
+        data.get('height'),
+        data.get('weight'),
+        player_id
+    ))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Player profile updated successfully'}), 200
+
+
+# ------------------------------------------------------------
+# DELETE /players/<player_id> - Remove player (fraud/misinformation)
+# [Ryan Suri - 3]
+@players.route('/players/<int:player_id>', methods=['DELETE'])
+def delete_player(player_id):
+    """Remove players that commit fraud or misinformation"""
+    logger.info(f'DELETE /players/{player_id} route')
+
+    cursor = db.get_db().cursor()
+
+    # Delete player (cascade will handle related records)
+    query = 'DELETE FROM Players WHERE playerID = %s'
+    cursor.execute(query, (player_id,))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Player removed successfully'}), 200
+
+
+# ------------------------------------------------------------
+# GET /players/<player_id>/stats - Get player stats
+# [Sean-1]
+@players.route('/players/<int:player_id>/stats', methods=['GET'])
+def get_player_stats(player_id):
+    """Return all game stats for this player across the season"""
+    logger.info(f'GET /players/{player_id}/stats route')
+
+    query = '''
+        SELECT gs.gameID, g.date, g.opponent, g.venue,
+               gs.minutes, gs.points, gs.rebounds, gs.assists,
+               gs.steals, gs.blocks, gs.turnovers, gs.fouls, gs.three_pt
+        FROM Game_Stats gs
+        JOIN Game g ON gs.gameID = g.gameID
+        WHERE gs.playerID = %s
+        ORDER BY g.date DESC
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (player_id,))
+    stats = cursor.fetchall()
+
+    return jsonify(stats), 200
+
+
+# ------------------------------------------------------------
+# POST /players/<player_id>/stats - Add game statistics
+# [Sean-1]
+@players.route('/players/<int:player_id>/stats', methods=['POST'])
+def add_player_stats(player_id):
+    """Add a new game's statistics for this player"""
+    logger.info(f'POST /players/{player_id}/stats route')
+
+    data = request.json
+
+    query = '''
+        INSERT INTO Game_Stats (gameID, playerID, minutes, points, rebounds, 
+                               assists, steals, blocks, turnovers, fouls, three_pt)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (
+        data.get('gameID'),
+        player_id,
+        data.get('minutes'),
+        data.get('points'),
+        data.get('rebounds'),
+        data.get('assists'),
+        data.get('steals'),
+        data.get('blocks'),
+        data.get('turnovers'),
+        data.get('fouls'),
+        data.get('three_pt')
+    ))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Stats added successfully'}), 201
+
+
+# ------------------------------------------------------------
+# PUT /players/<player_id>/stats - Update player stats (admin)
+# [Ryan Suri - 1]
+@players.route('/players/<int:player_id>/stats/<int:game_id>', methods=['PUT'])
+def update_player_stats(player_id, game_id):
+    """Update player profiles/stats"""
+    logger.info(f'PUT /players/{player_id}/stats/{game_id} route')
+
+    data = request.json
+
+    query = '''
+        UPDATE Game_Stats 
+        SET minutes = %s, points = %s, rebounds = %s, assists = %s,
+            steals = %s, blocks = %s, turnovers = %s, fouls = %s, three_pt = %s
+        WHERE playerID = %s AND gameID = %s
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (
+        data.get('minutes'),
+        data.get('points'),
+        data.get('rebounds'),
+        data.get('assists'),
+        data.get('steals'),
+        data.get('blocks'),
+        data.get('turnovers'),
+        data.get('fouls'),
+        data.get('three_pt'),
+        player_id,
+        game_id
+    ))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Stats updated successfully'}), 200
+
+
+# ------------------------------------------------------------
+# DELETE /players/<player_id>/stats/<game_id> - Remove fraudulent stats
+# [Ryan Suri - 4]
+@players.route('/players/<int:player_id>/stats/<int:game_id>', methods=['DELETE'])
+def delete_fraudulent_stats(player_id, game_id):
+    """Remove fraudulent statistics"""
+    logger.info(f'DELETE /players/{player_id}/stats/{game_id} route')
+
+    cursor = db.get_db().cursor()
+    query = 'DELETE FROM Game_Stats WHERE playerID = %s AND gameID = %s'
+    cursor.execute(query, (player_id, game_id))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Fraudulent stats removed successfully'}), 200
+
+
+# ------------------------------------------------------------
+# GET /players/<player_id>/videos - Get player videos
+# [Player-2], [Sara Chin - 2]
+@players.route('/players/<int:player_id>/videos', methods=['GET'])
+def get_player_videos(player_id):
+    """Return all uploaded highlight videos for this player"""
+    logger.info(f'GET /players/{player_id}/videos route')
+
+    query = '''
+        SELECT f.footageID, f.URL, f.duration, g.date, g.opponent
+        FROM Footage f
+        JOIN Game g ON f.gameID = g.gameID
+        WHERE f.playerID = %s
+        ORDER BY g.date DESC
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (player_id,))
+    videos = cursor.fetchall()
+
+    return jsonify(videos), 200
+
+
+# ------------------------------------------------------------
+# POST /players/<player_id>/videos - Upload highlight video
+# [Sean-2]
+@players.route('/players/<int:player_id>/videos', methods=['POST'])
 def upload_player_video(player_id):
-    try:
-        data = request.json
-        cursor = db.get_db().cursor()
-        
-        # Validate that player exists
-        cursor.execute("SELECT playerID, firstName, lastName FROM Players WHERE playerID = %s", (player_id,))
-        player = cursor.fetchone()
-        
-        if not player:
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': f'Player {player_id} not found'
-            }), 404
-        
-        # Validate required fields
-        if 'gameID' not in data or 'URL' not in data:
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': 'gameID and URL are required fields'
-            }), 400
-        
-        # Validate that game exists
-        game_id = data.get('gameID')
-        cursor.execute("SELECT gameID FROM Games WHERE gameID = %s", (game_id,))
-        if not cursor.fetchone():
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': f'Game {game_id} not found'
-            }), 404
-        
-        # Validate that player was in this game
-        cursor.execute("""
-            SELECT playerID 
-            FROM PlayerSchedules 
-            WHERE playerID = %s AND gameID = %s
-        """, (player_id, game_id))
-        
-        if not cursor.fetchone():
-            cursor.close()
-            return jsonify({
-                'success': False,
-                'message': f'Player {player_id} was not scheduled for game {game_id}'
-            }), 400
-        
-        # Insert the footage record
-        cursor.execute("""
-            INSERT INTO Footage (gameID, URL, duration)
-            VALUES (%s, %s, %s)
-        """, (
-            game_id,
-            data.get('URL'),
-            data.get('duration')
-        ))
-        
-        footage_id = cursor.lastrowid
-        db.get_db().commit()
-        cursor.close()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Highlight video uploaded successfully',
-            'footage': {
-                'footageID': footage_id,
-                'gameID': game_id,
-                'playerID': player_id,
-                'URL': data.get('URL'),
-                'duration': data.get('duration')
-            }
-        }), 201
-        
-    except Error as e:
-        db.get_db().rollback()
-        return jsonify({"error": str(e)}), 500
+    """Upload a new highlight video (URL or file reference)"""
+    logger.info(f'POST /players/{player_id}/videos route')
 
-# players to get scout reports 
-@players.route('/<int:player_id>/scout-reports', methods=['GET'])
-def get_player_scout_reports(player_id):
-    try:
-        cursor = db.get_db().cursor()
-        
-        cursor.execute("SELECT playerID, firstName, lastName FROM Players WHERE playerID = %s", (player_id,))
-        player = cursor.fetchone()
-        
-        if not player:
-            cursor.close()
-            return jsonify({'success': False, 'message': f'Player {player_id} not found'}), 404
-        
-        cursor.execute("""
-            SELECT 
-                pr.reportID, 
-                pr.date, 
-                pr.summary, 
-                pr.strengths, 
-                pr.weaknesses, 
-                pr.grade 
-            FROM PlayerReports pr 
-            WHERE pr.playerID = %s 
-            ORDER BY pr.date DESC
-        """, (player_id,))
-        
-        reports = cursor.fetchall()
-        cursor.close()
-        
-        return jsonify({
-            'success': True, 
-            'player': {
-                'playerID': player['playerID'], 
-                'firstName': player['firstName'], 
-                'lastName': player['lastName']
-            }, 
-            'reportCount': len(reports), 
-            'reports': reports
-        }), 200
-        
-    except Error as e:
-        return jsonify({"error": str(e)}), 500
+    data = request.json
+
+    query = '''
+        INSERT INTO Footage (gameID, playerID, URL, duration)
+        VALUES (%s, %s, %s, %s)
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (
+        data.get('gameID'),
+        player_id,
+        data.get('URL'),
+        data.get('duration')
+    ))
+    db.get_db().commit()
+
+    return jsonify({'message': 'Video uploaded successfully'}), 201
+
+
+# ------------------------------------------------------------
+# GET /players/<player_id>/feedback - Get scout feedback
+# [Sean-3]
+@players.route('/players/<int:player_id>/feedback', methods=['GET'])
+def get_player_feedback(player_id):
+    """Return feedback written by scouts for this player"""
+    logger.info(f'GET /players/{player_id}/feedback route')
+
+    query = '''
+        SELECT pr.reportID, pr.summary, pr.strengths, pr.weaknesses,
+               s.firstName as scout_first, s.lastName as scout_last,
+               s.role
+        FROM PlayerReports pr
+        JOIN Scout s ON pr.scoutID = s.scoutID
+        WHERE pr.playerID = %s
+        ORDER BY pr.reportID DESC
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query, (player_id,))
+    feedback = cursor.fetchall()
+
+    return jsonify(feedback), 200
+
+
+# ------------------------------------------------------------
+# GET /players/<player_id>/comparisons - Compare to similar players
+# [Sean-5]
+@players.route('/players/<int:player_id>/comparisons', methods=['GET'])
+def get_player_comparisons(player_id):
+    """Return comparison of this player's stats to similar players"""
+    logger.info(f'GET /players/{player_id}/comparisons route')
+
+    # First get the target player's info
+    cursor = db.get_db().cursor()
+    cursor.execute('''
+        SELECT height, ps.position
+        FROM Players p
+        LEFT JOIN Playsin ps ON p.playerID = ps.playerID
+        WHERE p.playerID = %s
+    ''', (player_id,))
+
+    player_info = cursor.fetchone()
+
+    if not player_info:
+        return jsonify({'error': 'Player not found'}), 404
+
+    # Get similar players with their stats
+    query = '''
+        SELECT p.playerID, p.firstName, p.lastName,
+               AVG(gs.points) as avg_points,
+               AVG(gs.rebounds) as avg_rebounds,
+               AVG(gs.assists) as avg_assists,
+               AVG(gs.steals) as avg_steals
+        FROM Players p
+        JOIN Playsin ps ON p.playerID = ps.playerID
+        JOIN Game_Stats gs ON p.playerID = gs.playerID
+        WHERE ps.position = %s 
+          AND p.height BETWEEN %s - 2 AND %s + 2
+          AND p.playerID != %s
+        GROUP BY p.playerID, p.firstName, p.lastName
+        LIMIT 10
+    '''
+
+    cursor.execute(query, (
+        player_info['position'],
+        player_info['height'],
+        player_info['height'],
+        player_id
+    ))
+    similar_players = cursor.fetchall()
+
+    return jsonify(similar_players), 200
+
+
+# ------------------------------------------------------------
+# GET /players/<player_id>/recruiting - Get recruiting schools
+# [Sean-6]
+@players.route('/players/<int:player_id>/recruiting', methods=['GET'])
+def get_recruiting_schools(player_id):
+    """Return list of schools recruiting players with similar profiles"""
+    logger.info(f'GET /players/{player_id}/recruiting route')
+
+    query = '''
+        SELECT DISTINCT s.schoolID, s.name, s.city, s.state,
+               COUNT(o.offerID) as total_offers
+        FROM School s
+        JOIN Offers o ON s.schoolID = o.schoolID
+        WHERE o.status = 'active'
+        GROUP BY s.schoolID, s.name, s.city, s.state
+        ORDER BY total_offers DESC
+    '''
+
+    cursor = db.get_db().cursor()
+    cursor.execute(query)
+    schools = cursor.fetchall()
+
+    return jsonify(schools), 200
