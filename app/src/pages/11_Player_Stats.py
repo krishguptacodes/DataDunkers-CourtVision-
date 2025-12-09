@@ -6,6 +6,7 @@ import streamlit as st
 from modules.nav import SideBarLinks
 import requests
 import pandas as pd
+from datetime import date
 
 st.set_page_config(layout='wide')
 
@@ -63,57 +64,89 @@ except Exception as e:
 # Add new game stats
 st.write("---")
 st.write('### Add Game Statistics')
+st.info("💡 Enter game details and your stats. The system will create the game record automatically.")
 
 with st.form("add_stats_form"):
+    # Game Information Section
+    st.subheader("Game Information")
     col1, col2 = st.columns(2)
 
     with col1:
-        game_id = st.number_input("Game ID", min_value=1, value=1)
+        game_date = st.date_input("Game Date", value=date.today(), max_value=date.today())
+        opponent = st.text_input("Opponent Team", placeholder="e.g., Lakers")
+        venue = st.text_input("Venue/Location", placeholder="e.g., Madison Square Garden")
+
+    with col2:
+        tournament = st.text_input("Tournament (Optional)", placeholder="e.g., AAU Championship")
+        start_time = st.time_input("Start Time (Optional)", value=None)
+        score = st.text_input("Final Score (Optional)", placeholder="e.g., 95-88")
+
+    st.write("---")
+
+    # Stats Section
+    st.subheader("Your Game Statistics")
+    col1, col2 = st.columns(2)
+
+    with col1:
         minutes = st.number_input("Minutes Played", min_value=0, max_value=48, value=30)
         points = st.number_input("Points", min_value=0, value=0)
         rebounds = st.number_input("Rebounds", min_value=0, value=0)
-        fouls = st.number_input("Fouls", min_value=0, value=0)
-
-    with col2:
         assists = st.number_input("Assists", min_value=0, value=0)
         steals = st.number_input("Steals", min_value=0, value=0)
+
+    with col2:
         blocks = st.number_input("Blocks", min_value=0, value=0)
         turnovers = st.number_input("Turnovers", min_value=0, value=0)
-        three_pt = st.number_input("3-Pointers", min_value=0, value=0)
+        fouls = st.number_input("Fouls", min_value=0, value=0)
+        three_pt = st.number_input("3-Pointers Made", min_value=0, value=0)
 
-    submitted = st.form_submit_button("Submit Stats", type="primary")
+    submitted = st.form_submit_button("Submit Game & Stats", type="primary")
 
     if submitted:
-        try:
-            # Prepare data for API
-            stats_data = {
-                'gameID': int(game_id),
-                'minutes': int(minutes),
-                'points': int(points),
-                'rebounds': int(rebounds),
-                'assists': int(assists),
-                'steals': int(steals),
-                'blocks': int(blocks),
-                'turnovers': int(turnovers),
-                'fouls': int(fouls),
-                'three_pt': int(three_pt)
-            }
+        # Validate required fields
+        if not opponent or not venue:
+            st.error("⚠️ Please enter Opponent Team and Venue")
+        else:
+            try:
+                # Prepare data for API
+                game_and_stats_data = {
+                    # Game information
+                    'date': str(game_date),
+                    'opponent': opponent,
+                    'venue': venue,
+                    'tournament': tournament if tournament else '',
+                    'startTime': str(start_time) if start_time else '00:00:00',
+                    'endTime': '00:00:00',  # Can add end time input if needed
+                    'score': score if score else '',
+                    # Player stats
+                    'minutes': int(minutes),
+                    'points': int(points),
+                    'rebounds': int(rebounds),
+                    'assists': int(assists),
+                    'steals': int(steals),
+                    'blocks': int(blocks),
+                    'turnovers': int(turnovers),
+                    'fouls': int(fouls),
+                    'three_pt': int(three_pt)
+                }
 
-            # POST to API
-            response = requests.post(
-                f'http://api:4000/players/{player_id}/stats',
-                json=stats_data
-            )
+                # POST to NEW combined endpoint
+                response = requests.post(
+                    f'http://api:4000/players/{player_id}/game-and-stats',
+                    json=game_and_stats_data
+                )
 
-            if response.status_code == 201:
-                st.success("Stats submitted successfully!")
-                st.balloons()
-                st.rerun()
-            else:
-                st.error(f"Failed to submit stats. Status code: {response.status_code}")
+                if response.status_code == 201:
+                    result = response.json()
+                    st.success(f"✅ Game and stats submitted successfully! Game ID: {result.get('gameID')}")
+                    st.balloons()
+                    st.rerun()
+                else:
+                    st.error(f"❌ Failed to submit stats. Status code: {response.status_code}")
+                    st.error(f"Error details: {response.text}")
 
-        except Exception as e:
-            st.error(f"Error submitting stats: {str(e)}")
+            except Exception as e:
+                st.error(f"Error submitting stats: {str(e)}")
 
 # Recent games - Fetch from API
 st.write("---")
@@ -131,15 +164,15 @@ try:
 
             # Select relevant columns for display
             if 'date' in df.columns:
-                display_df = df[['date', 'opponent', 'points', 'rebounds', 'assists']].copy()
-                display_df.columns = ['Date', 'Opponent', 'Points', 'Rebounds', 'Assists']
+                display_df = df[['date', 'opponent', 'venue', 'points', 'rebounds', 'assists']].copy()
+                display_df.columns = ['Date', 'Opponent', 'Venue', 'Points', 'Rebounds', 'Assists']
             else:
                 # If no date column, show what we have
                 display_columns = ['points', 'rebounds', 'assists', 'steals', 'blocks']
                 available_columns = [col for col in display_columns if col in df.columns]
                 display_df = df[available_columns]
 
-            st.dataframe(display_df, use_container_width=True)
+            st.dataframe(display_df, use_container_width=True, hide_index=True)
         else:
             st.info("No game stats available yet. Add your first game above!")
     else:
