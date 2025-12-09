@@ -1,7 +1,15 @@
 #### Fall 2025 CS 3200 DataDunkers Project
 
+## Created By: 
+Caitlin Heery, Krish Gupta, Sebastian Romero, Aarav Sikriwal
+
 ## Our Video
 https://screenapp.io/app/v/7kR8nKE6Rt 
+
+## How to start our application
+1. Clone repo to your machine https://github.com/krishguptacodes/DataDunkers-CourtVision-.git
+2. set up .env in the api folder
+3. run this command - docker compose up - to start containers and make sure mysql_db, web-api- and web_app are showing
 
 This repo is for our team DataDunkers - Caitlin Heery, Aarav Sikriwal, Sebastian Romero, Krish Gupta. We created a data-driven web app CourtVision. Our mission is to create a thorough basketball scouting and analytics platform that connects players, scouts, and analysts through real-time statistics tracking, video analysis, and data-driven insights.
 Presentation Link - 
